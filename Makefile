@@ -22,9 +22,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-ifeq ($(shell uname -s),Darwin)
-CONFIG_DARWIN=y
-endif
+#ifeq ($(shell uname -s),Darwin)
+#CONFIG_DARWIN=y
+#endif
 # Windows cross compilation from Linux
 #CONFIG_WIN32=y
 # use link time optimization (smaller and faster executables but slower build)

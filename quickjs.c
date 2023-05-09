@@ -32,13 +32,13 @@
 #include <time.h>
 #include <fenv.h>
 #include <math.h>
-#if defined(__APPLE__)
+/*#if defined(__APPLE__)
 #include <malloc/malloc.h>
-#elif defined(__linux__)
+#elif defined(__linux__)*/
 #include <malloc.h>
-#elif defined(__FreeBSD__)
+/*#elif defined(__FreeBSD__)
 #include <malloc_np.h>
-#endif
+#endif*/
 
 #include "cutils.h"
 #include "list.h"
@@ -6190,11 +6190,7 @@ void JS_ComputeMemoryUsage(JSRuntime *rt, JSMemoryUsage *s)
 
 void JS_DumpMemoryUsage(FILE *fp, const JSMemoryUsage *s, JSRuntime *rt)
 {
-    fprintf(fp, "QuickJS memory usage -- "
-#ifdef CONFIG_BIGNUM
-            "BigNum "
-#endif
-            CONFIG_VERSION " version, %d-bit, malloc limit: %"PRId64"\n\n",
+    fprintf(fp, "QuickJS memory usage -- xxx version, %d-bit, malloc limit: %"PRId64"\n\n",
             (int)sizeof(void *) * 8, (int64_t)(ssize_t)s->malloc_limit);
 #if 1
     if (rt) {
@@ -42013,38 +42009,8 @@ static JSValue js___date_clock(JSContext *ctx, JSValueConst this_val,
 /* OS dependent. d = argv[0] is in ms from 1970. Return the difference
    between UTC time and local time 'd' in minutes */
 static int getTimezoneOffset(int64_t time) {
-#if defined(_WIN32)
     /* XXX: TODO */
     return 0;
-#else
-    time_t ti;
-    struct tm tm;
-
-    time /= 1000; /* convert to seconds */
-    if (sizeof(time_t) == 4) {
-        /* on 32-bit systems, we need to clamp the time value to the
-           range of `time_t`. This is better than truncating values to
-           32 bits and hopefully provides the same result as 64-bit
-           implementation of localtime_r.
-         */
-        if ((time_t)-1 < 0) {
-            if (time < INT32_MIN) {
-                time = INT32_MIN;
-            } else if (time > INT32_MAX) {
-                time = INT32_MAX;
-            }
-        } else {
-            if (time < 0) {
-                time = 0;
-            } else if (time > UINT32_MAX) {
-                time = UINT32_MAX;
-            }
-        }
-    }
-    ti = time;
-    localtime_r(&ti, &tm);
-    return -tm.tm_gmtoff / 60;
-#endif
 }
 
 #if 0

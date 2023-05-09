@@ -42,9 +42,8 @@
 #include <conio.h>
 #include <utime.h>
 #else
-#include <dlfcn.h>
-#include <termios.h>
-#include <sys/ioctl.h>
+//#include <termios.h>
+//#include <sys/ioctl.h>
 #include <sys/wait.h>
 
 #if defined(__APPLE__)
@@ -453,63 +452,12 @@ typedef JSModuleDef *(JSInitModuleFunc)(JSContext *ctx,
                                         const char *module_name);
 
 
-#if defined(_WIN32)
 static JSModuleDef *js_module_loader_so(JSContext *ctx,
                                         const char *module_name)
 {
     JS_ThrowReferenceError(ctx, "shared library modules are not supported yet");
     return NULL;
 }
-#else
-static JSModuleDef *js_module_loader_so(JSContext *ctx,
-                                        const char *module_name)
-{
-    JSModuleDef *m;
-    void *hd;
-    JSInitModuleFunc *init;
-    char *filename;
-    
-    if (!strchr(module_name, '/')) {
-        /* must add a '/' so that the DLL is not searched in the
-           system library paths */
-        filename = js_malloc(ctx, strlen(module_name) + 2 + 1);
-        if (!filename)
-            return NULL;
-        strcpy(filename, "./");
-        strcpy(filename + 2, module_name);
-    } else {
-        filename = (char *)module_name;
-    }
-    
-    /* C module */
-    hd = dlopen(filename, RTLD_NOW | RTLD_LOCAL);
-    if (filename != module_name)
-        js_free(ctx, filename);
-    if (!hd) {
-        JS_ThrowReferenceError(ctx, "could not load module filename '%s' as shared library",
-                               module_name);
-        goto fail;
-    }
-
-    init = dlsym(hd, "js_init_module");
-    if (!init) {
-        JS_ThrowReferenceError(ctx, "could not load module filename '%s': js_init_module not found",
-                               module_name);
-        goto fail;
-    }
-
-    m = init(ctx, module_name);
-    if (!m) {
-        JS_ThrowReferenceError(ctx, "could not load module filename '%s': initialization error",
-                               module_name);
-    fail:
-        if (hd)
-            dlclose(hd);
-        return NULL;
-    }
-    return m;
-}
-#endif /* !_WIN32 */
 
 int js_module_set_import_meta(JSContext *ctx, JSValueConst func_val,
                               JS_BOOL use_realpath, JS_BOOL is_main)
@@ -1714,58 +1662,58 @@ static JSValue js_os_ttySetRaw(JSContext *ctx, JSValueConst this_val,
 static JSValue js_os_ttyGetWinSize(JSContext *ctx, JSValueConst this_val,
                                    int argc, JSValueConst *argv)
 {
-    int fd;
-    struct winsize ws;
-    JSValue obj;
-    
-    if (JS_ToInt32(ctx, &fd, argv[0]))
-        return JS_EXCEPTION;
-    if (ioctl(fd, TIOCGWINSZ, &ws) == 0 &&
-        ws.ws_col >= 4 && ws.ws_row >= 4) {
-        obj = JS_NewArray(ctx);
-        if (JS_IsException(obj))
-            return obj;
-        JS_DefinePropertyValueUint32(ctx, obj, 0, JS_NewInt32(ctx, ws.ws_col), JS_PROP_C_W_E);
-        JS_DefinePropertyValueUint32(ctx, obj, 1, JS_NewInt32(ctx, ws.ws_row), JS_PROP_C_W_E);
-        return obj;
-    } else {
+    //int fd;
+    //struct winsize ws;
+    //JSValue obj;
+
+    //if (JS_ToInt32(ctx, &fd, argv[0]))
+    //    return JS_EXCEPTION;
+    //if (ioctl(fd, TIOCGWINSZ, &ws) == 0 &&
+    //    ws.ws_col >= 4 && ws.ws_row >= 4) {
+    //    obj = JS_NewArray(ctx);
+    //    if (JS_IsException(obj))
+    //        return obj;
+    //    JS_DefinePropertyValueUint32(ctx, obj, 0, JS_NewInt32(ctx, ws.ws_col), JS_PROP_C_W_E);
+    //    JS_DefinePropertyValueUint32(ctx, obj, 1, JS_NewInt32(ctx, ws.ws_row), JS_PROP_C_W_E);
+    //    return obj;
+    //} else {
         return JS_NULL;
-    }
+    //}
 }
 
-static struct termios oldtty;
+//static struct termios oldtty;
 
 static void term_exit(void)
 {
-    tcsetattr(0, TCSANOW, &oldtty);
+    //tcsetattr(0, TCSANOW, &oldtty);
 }
 
 /* XXX: should add a way to go back to normal mode */
 static JSValue js_os_ttySetRaw(JSContext *ctx, JSValueConst this_val,
                                int argc, JSValueConst *argv)
 {
-    struct termios tty;
-    int fd;
-    
-    if (JS_ToInt32(ctx, &fd, argv[0]))
-        return JS_EXCEPTION;
-    
-    memset(&tty, 0, sizeof(tty));
-    tcgetattr(fd, &tty);
-    oldtty = tty;
+    //struct termios tty;
+    //int fd;
 
-    tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP
-                          |INLCR|IGNCR|ICRNL|IXON);
-    tty.c_oflag |= OPOST;
-    tty.c_lflag &= ~(ECHO|ECHONL|ICANON|IEXTEN);
-    tty.c_cflag &= ~(CSIZE|PARENB);
-    tty.c_cflag |= CS8;
-    tty.c_cc[VMIN] = 1;
-    tty.c_cc[VTIME] = 0;
+    //if (JS_ToInt32(ctx, &fd, argv[0]))
+    //    return JS_EXCEPTION;
 
-    tcsetattr(fd, TCSANOW, &tty);
+    //memset(&tty, 0, sizeof(tty));
+    //tcgetattr(fd, &tty);
+    //oldtty = tty;
 
-    atexit(term_exit);
+    //tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP
+    //                      |INLCR|IGNCR|ICRNL|IXON);
+    //tty.c_oflag |= OPOST;
+    //tty.c_lflag &= ~(ECHO|ECHONL|ICANON|IEXTEN);
+    //tty.c_cflag &= ~(CSIZE|PARENB);
+    //tty.c_cflag |= CS8;
+    //tty.c_cc[VMIN] = 1;
+    //tty.c_cc[VTIME] = 0;
+
+    //tcsetattr(fd, TCSANOW, &tty);
+
+    //atexit(term_exit);
     return JS_UNDEFINED;
 }
 
@@ -1919,47 +1867,47 @@ typedef void (*sighandler_t)(int sig_num);
 static JSValue js_os_signal(JSContext *ctx, JSValueConst this_val,
                             int argc, JSValueConst *argv)
 {
-    JSRuntime *rt = JS_GetRuntime(ctx);
-    JSThreadState *ts = JS_GetRuntimeOpaque(rt);
-    JSOSSignalHandler *sh;
-    uint32_t sig_num;
-    JSValueConst func;
-    sighandler_t handler;
+    //JSRuntime *rt = JS_GetRuntime(ctx);
+    //JSThreadState *ts = JS_GetRuntimeOpaque(rt);
+    //JSOSSignalHandler *sh;
+    //uint32_t sig_num;
+    //JSValueConst func;
+    //sighandler_t handler;
 
-    if (!is_main_thread(rt))
-        return JS_ThrowTypeError(ctx, "signal handler can only be set in the main thread");
-    
-    if (JS_ToUint32(ctx, &sig_num, argv[0]))
-        return JS_EXCEPTION;
-    if (sig_num >= 64)
-        return JS_ThrowRangeError(ctx, "invalid signal number");
-    func = argv[1];
-    /* func = null: SIG_DFL, func = undefined, SIG_IGN */
-    if (JS_IsNull(func) || JS_IsUndefined(func)) {
-        sh = find_sh(ts, sig_num);
-        if (sh) {
-            free_sh(JS_GetRuntime(ctx), sh);
-        }
-        if (JS_IsNull(func))
-            handler = SIG_DFL;
-        else
-            handler = SIG_IGN;
-        signal(sig_num, handler);
-    } else {
-        if (!JS_IsFunction(ctx, func))
-            return JS_ThrowTypeError(ctx, "not a function");
-        sh = find_sh(ts, sig_num);
-        if (!sh) {
-            sh = js_mallocz(ctx, sizeof(*sh));
-            if (!sh)
-                return JS_EXCEPTION;
-            sh->sig_num = sig_num;
-            list_add_tail(&sh->link, &ts->os_signal_handlers);
-        }
-        JS_FreeValue(ctx, sh->func);
-        sh->func = JS_DupValue(ctx, func);
-        signal(sig_num, os_signal_handler);
-    }
+    //if (!is_main_thread(rt))
+    //    return JS_ThrowTypeError(ctx, "signal handler can only be set in the main thread");
+
+    //if (JS_ToUint32(ctx, &sig_num, argv[0]))
+    //    return JS_EXCEPTION;
+    //if (sig_num >= 64)
+    //    return JS_ThrowRangeError(ctx, "invalid signal number");
+    //func = argv[1];
+    ///* func = null: SIG_DFL, func = undefined, SIG_IGN */
+    //if (JS_IsNull(func) || JS_IsUndefined(func)) {
+    //    sh = find_sh(ts, sig_num);
+    //    if (sh) {
+    //        free_sh(JS_GetRuntime(ctx), sh);
+    //    }
+    //    if (JS_IsNull(func))
+    //        handler = SIG_DFL;
+    //    else
+    //        handler = SIG_IGN;
+    //    signal(sig_num, handler);
+    //} else {
+    //    if (!JS_IsFunction(ctx, func))
+    //        return JS_ThrowTypeError(ctx, "not a function");
+    //    sh = find_sh(ts, sig_num);
+    //    if (!sh) {
+    //        sh = js_mallocz(ctx, sizeof(*sh));
+    //        if (!sh)
+    //            return JS_EXCEPTION;
+    //        sh->sig_num = sig_num;
+    //        list_add_tail(&sh->link, &ts->os_signal_handlers);
+    //    }
+    //    JS_FreeValue(ctx, sh->func);
+    //    sh->func = JS_DupValue(ctx, func);
+    //    signal(sig_num, os_signal_handler);
+    //}
     return JS_UNDEFINED;
 }
 
