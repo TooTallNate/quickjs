@@ -6539,6 +6539,20 @@ static void build_backtrace(JSContext *ctx, JSValueConst error_obj,
     else
         str = JS_NewString(ctx, (char *)dbuf.buf);
     dbuf_free(&dbuf);
+
+    /* If `Error.prepareStackTrace()` is defined, then invoke that before setting
+       the `stack` property on the error instance */
+    JSValue error_ctor = JS_GetPropertyStr(ctx, ctx->global_obj, "Error");
+    JSValue prepare_fn = JS_GetPropertyStr(ctx, error_ctor, "prepareStackTrace");
+    if (JS_IsFunction(ctx, prepare_fn)) {
+        JSValueConst args[] = {error_obj, str};
+        JSValue prepared_str = JS_Call(ctx, prepare_fn, ctx->global_obj, 2, args);
+        JS_FreeValue(ctx, str);
+        str = prepared_str;
+    }
+    JS_FreeValue(ctx, prepare_fn);
+    JS_FreeValue(ctx, error_ctor);
+
     JS_DefinePropertyValue(ctx, error_obj, JS_ATOM_stack, str,
                            JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
 }
