@@ -46264,12 +46264,6 @@ static const JSCFunctionListEntry js_generator_proto_funcs[] = {
 
 /* Promise */
 
-typedef enum JSPromiseStateEnum {
-    JS_PROMISE_PENDING,
-    JS_PROMISE_FULFILLED,
-    JS_PROMISE_REJECTED,
-} JSPromiseStateEnum;
-
 typedef struct JSPromiseData {
     JSPromiseStateEnum promise_state;
     /* 0=fulfill, 1=reject, list of JSPromiseReactionData.link */
@@ -46704,6 +46698,19 @@ static JSValue js_new_promise_capability(JSContext *ctx,
 JSValue JS_NewPromiseCapability(JSContext *ctx, JSValue *resolving_funcs)
 {
     return js_new_promise_capability(ctx, resolving_funcs, JS_UNDEFINED);
+}
+
+JSPromiseStateEnum JS_GetPromiseState(JSContext *ctx, JSValueConst promise)
+{
+    JSPromiseData *s = JS_GetOpaque(promise, JS_CLASS_PROMISE);
+    return s->promise_state;
+}
+
+JSValue JS_GetPromiseResult(JSContext *ctx, JSValueConst promise)
+{
+    JSPromiseData *s = JS_GetOpaque(promise, JS_CLASS_PROMISE);
+    JS_DupValue(ctx, s->promise_result);
+    return s->promise_result;
 }
 
 static JSValue js_promise_resolve(JSContext *ctx, JSValueConst this_val,
